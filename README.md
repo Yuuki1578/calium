@@ -1,24 +1,24 @@
 # Calium: REPL Lexer
 
-## [!] Disclaimer
+## [⚠️] Disclaimer  
 This project is currently unstable and may break
 in the next version, so is up to you.
 
-## Core types
+## Core types  
 Here are list of types, used in this project
 
-1. `Scanner<'a>`
+1. `Scanner<'a>`  
   This type is built on top of the `Chars<'a>` type.
   it also implements the trait `Deref<Target = Chars<'a>`
   and `DerefMut` as well.
 
-2. `TokenKind`
+2. `TokenKind`  
   This type is an `enum` that represent a token for
   a single symbols.
   The token maybe a little bit messy when it comes to
   scan an integer, represented by `Number(u128)`.
 
-  ### Variants
+  ### Variants  
   1. `Number(u128)`, represent decimal number
   2. `Add`, represent _addition_ `(+)`
   3. `Sub`, represent _substraction_ `(-)`
@@ -28,7 +28,7 @@ Here are list of types, used in this project
   7. `Pow`, represent _power_ `(^)`
   8. `EOL`, end of line `(;)`
 
-3. `SyntaxError`
+3. `SyntaxError`  
   This type act as an error reporter for the user.
   This type encapsulate crucial data like where the error
   occures like the line of code, or the column.
