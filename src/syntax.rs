@@ -1,12 +1,5 @@
 use std::fmt::Display;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum SyntaxErrorKind {
-    UnexpectedSymbols(char),
-    MissingEndOfLine,
-    IntegerBufferOccured,
-}
-
 #[derive(Debug)]
 pub struct SyntaxError {
     msg: String,
