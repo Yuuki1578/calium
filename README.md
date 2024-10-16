@@ -28,6 +28,7 @@ Here are list of types, used in this project
   7. `Pow`, represent _power_ `(^)`
   8. `EOL`, end of line `(;)`
 
+
 3. `SyntaxError`  
   This type act as an error reporter for the user.
   This type encapsulate crucial data like where the error
