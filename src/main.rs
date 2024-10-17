@@ -1,37 +1,29 @@
 pub mod args;
 pub mod lexer;
+pub mod runtime;
 pub mod syntax;
 pub mod threaded;
 
-use lexer::Scanner;
-use std::io::{self, Write};
-
-pub fn repl() -> ! {
-    let mut line = 1_u128;
-
-    loop {
-        let mut input = String::new();
-
-        print!("({line})> ");
-
-        io::stdout().lock().flush().unwrap_or_default();
-
-        let _ = io::stdin().read_line(&mut input).unwrap_or_else(|error| {
-            eprintln!("{error}");
-            return 0;
-        });
-
-        let mut scanner = Scanner::new(input.trim());
-
-        match scanner.scan() {
-            Ok(result) => println!("{result:#?}"),
-            Err(error) => eprintln!("{error}"),
-        }
-
-        line += 1;
-    }
-}
+use args::Args;
 
 fn main() {
-    repl();
+    let args = Args::new(1);
+
+    if args.len() == 1 {
+        let bait = String::new();
+        let get_inner = args.get(0).unwrap_or(&bait);
+
+        if runtime::read_file(get_inner)
+            .inspect_err(|error| {
+                eprintln!("{error}");
+            })
+            .is_err()
+        {
+            return;
+        }
+
+        return;
+    } else {
+        runtime::repl();
+    }
 }

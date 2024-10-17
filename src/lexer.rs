@@ -2,7 +2,7 @@ use crate::syntax::SyntaxError;
 use std::ops::{Deref, DerefMut};
 use std::str::Chars;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TokenKind {
     Number(u128),
     Add,
@@ -14,7 +14,7 @@ pub enum TokenKind {
     EOL,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Scanner<'a> {
     chars: Chars<'a>,
     result: Vec<TokenKind>,
@@ -130,6 +130,11 @@ impl<'a> Scanner<'a> {
         }
 
         Ok(self)
+    }
+
+    pub fn scan_owned(&mut self) -> Result<Self, SyntaxError> {
+        let result = Self::clone(self.scan()?);
+        Ok(result)
     }
 
     pub fn parser_dump(&self) -> String {
