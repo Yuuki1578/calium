@@ -1,8 +1,12 @@
+#[macro_use]
 pub mod args;
+
+#[macro_use]
 pub mod lexer;
+
 pub mod runtime;
 pub mod syntax;
-pub mod threaded;
+pub mod tests;
 
 use args::Args;
 use std::process::ExitCode;

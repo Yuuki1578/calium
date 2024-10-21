@@ -2,16 +2,22 @@ use crate::syntax::SyntaxError;
 use std::ops::{Deref, DerefMut};
 use std::str::Chars;
 
+macro_rules! scan {
+    ($str:expr) => {{
+        crate::lexer::Scanner::new($str).scan_move()
+    }};
+}
+
 #[derive(Debug, Clone)]
 pub enum TokenKind {
-    Number(u128),
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Rem,
-    Pow,
-    EOL,
+    Number(i64),
+    Addition,
+    Substraction,
+    Multiplication,
+    Division,
+    Remainder,
+    Power,
+    EndStatement,
 }
 
 #[derive(Debug, Clone)]
@@ -32,90 +38,88 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn inc_line(&mut self) {
+    fn add_line(&mut self) {
         self.pos_line += 1;
     }
 
-    fn inc_col(&mut self) {
+    fn add_column(&mut self) {
         self.pos_col += 1;
     }
 
-    fn reset_col(&mut self) {
+    fn reset_column(&mut self) {
         self.pos_col = 1;
     }
 
-    fn push_token(&mut self, tok: TokenKind) {
+    fn add_token(&mut self, tok: TokenKind) {
         self.result.push(tok);
     }
 
     #[allow(unused_assignments)]
     pub fn scan(&mut self) -> Result<&mut Self, SyntaxError> {
-        use TokenKind::*;
-
         while let Some(chr) = self.next() {
-            let mut is_number = 0_u128;
+            let mut is_number = 0_i64;
 
             match chr {
                 '0'..='9' => {
-                    is_number = chr.to_digit(10).unwrap_or(0) as u128;
+                    is_number = chr.to_digit(10).unwrap_or(0) as i64;
 
                     'inner: while let Some(inside) = self.clone().next() {
-                        self.inc_col();
+                        self.add_column();
 
                         if let Some(digit) = inside.to_digit(10) {
-                            is_number = is_number * 10 + digit as u128;
+                            is_number = is_number * 10 + digit as i64;
                             self.next();
                         } else {
                             break 'inner;
                         }
                     }
 
-                    self.result.push(Number(is_number));
+                    self.result.push(TokenKind::Number(is_number));
                     is_number = 0;
                 }
 
                 '+' => {
-                    self.push_token(Add);
-                    self.inc_col();
+                    self.add_token(TokenKind::Addition);
+                    self.add_column();
                 }
 
                 '-' => {
-                    self.push_token(Sub);
-                    self.inc_col();
+                    self.add_token(TokenKind::Substraction);
+                    self.add_column();
                 }
 
                 '*' => {
-                    self.push_token(Mul);
-                    self.inc_col();
+                    self.add_token(TokenKind::Multiplication);
+                    self.add_column();
                 }
 
                 '/' => {
-                    self.push_token(Div);
-                    self.inc_col();
+                    self.add_token(TokenKind::Division);
+                    self.add_column();
                 }
 
                 '%' => {
-                    self.push_token(Rem);
-                    self.inc_col();
+                    self.add_token(TokenKind::Remainder);
+                    self.add_column();
                 }
 
                 '^' => {
-                    self.push_token(Pow);
-                    self.inc_col();
+                    self.add_token(TokenKind::Power);
+                    self.add_column();
                 }
 
                 ';' => {
-                    self.push_token(EOL);
-                    self.inc_col();
+                    self.add_token(TokenKind::EndStatement);
+                    self.add_column();
                 }
 
                 '\n' => {
-                    self.inc_line();
-                    self.reset_col();
+                    self.add_line();
+                    self.reset_column();
                 }
 
                 ' ' | '\t' => {
-                    self.inc_col();
+                    self.add_column();
                 }
 
                 _ => {
@@ -132,13 +136,10 @@ impl<'a> Scanner<'a> {
         Ok(self)
     }
 
-    pub fn scan_owned(&mut self) -> Result<Self, SyntaxError> {
+    pub fn scan_move(mut self) -> Result<Self, SyntaxError> {
         let result = Self::clone(self.scan()?);
-        Ok(result)
-    }
 
-    pub fn parser_dump(&self) -> String {
-        format!("{:#?}", &self.result)
+        Ok(result)
     }
 }
 

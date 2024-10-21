@@ -1,8 +1,20 @@
 use std::env;
 use std::ops::{Deref, DerefMut};
 
-pub trait ArgsComparator {
-    fn cmp(&self, idx: usize, expected: &str) -> bool;
+macro_rules! string {
+    ($slice:expr) => {{
+        String::from($slice)
+    }};
+
+    ($($slice:expr),*) => {{
+        let mut vec_string: Vec<String> = Vec::new();
+
+        $(
+            vec_string.push(string!($slice));
+        )*
+
+        vec_string
+    }};
 }
 
 #[derive(Debug, Clone)]
@@ -24,24 +36,6 @@ impl DerefMut for Args {
     }
 }
 
-impl ArgsComparator for Args {
-    fn cmp(&self, idx: usize, expected: &str) -> bool {
-        let check_some = self.args.get(idx);
-
-        if check_some.is_some() {
-            if let Some(args) = check_some {
-                if args == expected {
-                    return true;
-                }
-
-                return false;
-            }
-        }
-
-        return false;
-    }
-}
-
 impl Args {
     pub fn new(lim: usize) -> Self {
         Self {
@@ -51,5 +45,13 @@ impl Args {
                 .map(|(_, string)| string)
                 .collect(),
         }
+    }
+
+    #[inline]
+    pub fn iter_cmp(&self, operand: Vec<String>) -> Vec<bool> {
+        let final_result: Vec<bool> = Vec::new();
+        let mut expected_queue = operand.iter();
+
+        final_result
     }
 }
