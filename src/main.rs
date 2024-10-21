@@ -4,32 +4,40 @@ pub mod args;
 #[macro_use]
 pub mod lexer;
 
+pub mod rules;
 pub mod runtime;
 pub mod syntax;
 pub mod tests;
 
-use args::Args;
+use args::{ArgsHandler, Parser};
 use std::process::ExitCode;
 
-static mut HAS_ERROR: bool = false;
-
 fn main() -> ExitCode {
-    let args = Args::new(1);
+    let parsed = ArgsHandler::parse();
 
-    if args.len() == 1 {
-        let bait = String::new();
-        let get_inner = args.get(0).unwrap_or(&bait);
+    match parsed.tuple() {
+        (Some(run), None) => {
+            if let Err(error) = runtime::read_file(run) {
+                let err = error.raw_os_error().unwrap_or(1);
 
-        match runtime::read_file(get_inner) {
-            Ok(_) => return ExitCode::SUCCESS,
-            Err(error) => {
-                let os_err = error.raw_os_error().unwrap_or(1) as u8;
-
-                eprintln!("{error}");
-                return ExitCode::from(os_err);
+                return ExitCode::from(err as u8);
+            } else {
+                return ExitCode::SUCCESS;
             }
         }
-    }
 
-    runtime::repl();
+        (None, Some(eval)) => {
+            if let Err(syntax_err) = runtime::eval(eval) {
+                eprintln!("{syntax_err}");
+
+                return ExitCode::FAILURE;
+            } else {
+                return ExitCode::SUCCESS;
+            }
+        }
+
+        (None, None) | (Some(_), Some(_)) => {
+            runtime::repl();
+        }
+    }
 }

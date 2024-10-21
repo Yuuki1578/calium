@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-clap = "4.5.20"
+clap = { version = "4.5.20", features = ["derive"] }
 llvm-sys = "191.0.0"
 pest = "2.7.14"

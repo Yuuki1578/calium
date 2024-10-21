@@ -1,4 +1,5 @@
 use crate::lexer::Scanner;
+use crate::syntax::SyntaxError;
 use std::fs;
 use std::io::{self, Write};
 
@@ -39,4 +40,13 @@ pub fn repl() -> ! {
 
         line += 1;
     }
+}
+
+pub fn eval(src: &Vec<String>) -> Result<(), SyntaxError> {
+    for exp in src.iter() {
+        let scanned = Scanner::new(exp).scan_move()?;
+        println!("{:#?}", scanned);
+    }
+
+    Ok(())
 }

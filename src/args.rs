@@ -1,57 +1,28 @@
-use std::env;
-use std::ops::{Deref, DerefMut};
+pub use clap::Parser;
 
-macro_rules! string {
-    ($slice:expr) => {{
-        String::from($slice)
-    }};
+#[derive(Debug, Parser)]
+#[command(
+    name = "Calium",
+    version,
+    about = "Calium, the calculator language implemented in Rust",
+    long_about = "The Calium Language, is a calculator-like language that can parse and evaluate a simple mathematical expression",
+    next_line_help = true
+)]
+/// Calium, the calculator language implementation in Rust
+pub struct ArgsHandler {
+    #[arg(short = 'r', long = "run", default_value = None, value_name = "FILE")]
+    /// Optional file to be interpreted.
+    /// If not provided, run REPL instead
+    pub run: Option<String>,
 
-    ($($slice:expr),*) => {{
-        let mut vec_string: Vec<String> = Vec::new();
-
-        $(
-            vec_string.push(string!($slice));
-        )*
-
-        vec_string
-    }};
+    /// Optional expression to be evaluated.
+    /// If not provided, run REPL instead
+    #[arg(short = 'e', long = "eval", default_value = None, value_name = "EXPR")]
+    pub eval: Option<Vec<String>>,
 }
 
-#[derive(Debug, Clone)]
-pub struct Args {
-    args: Vec<String>,
-}
-
-impl Deref for Args {
-    type Target = Vec<String>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.args
-    }
-}
-
-impl DerefMut for Args {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.args
-    }
-}
-
-impl Args {
-    pub fn new(lim: usize) -> Self {
-        Self {
-            args: env::args()
-                .enumerate()
-                .filter(|(idx, _)| *idx != 0 && *idx <= lim)
-                .map(|(_, string)| string)
-                .collect(),
-        }
-    }
-
-    #[inline]
-    pub fn iter_cmp(&self, operand: Vec<String>) -> Vec<bool> {
-        let final_result: Vec<bool> = Vec::new();
-        let mut expected_queue = operand.iter();
-
-        final_result
+impl ArgsHandler {
+    pub fn tuple(&self) -> (Option<&String>, Option<&Vec<String>>) {
+        (self.run.as_ref(), self.eval.as_ref())
     }
 }
