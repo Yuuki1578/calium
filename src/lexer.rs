@@ -6,6 +6,16 @@ macro_rules! scan {
     ($str:expr) => {{
         crate::lexer::Scanner::new($str).scan_move()
     }};
+
+    ($($str:expr),*) => {{
+        let mut eval_vec = vec![];
+
+        $(
+            eval_vec.push($str.to_string());
+        )*
+
+        crate::runtime::eval(&eval_vec)
+    }};
 }
 
 #[derive(Debug, Clone)]
