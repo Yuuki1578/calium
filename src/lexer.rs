@@ -1,23 +1,29 @@
+use crate::ast::{ASTSpec, BinaryOperator, NodeExpr, UnaryOperator};
 use crate::syntax::SyntaxError;
 use std::ops::{Deref, DerefMut};
 use std::str::Chars;
 
-#[derive(Debug, Clone)]
-pub enum TokenKind {
-    Number(u128),
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Rem,
-    Pow,
-    EOL,
+// #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+// pub enum TokenKind {
+//     Number(i64),
+//     Addition,
+//     Substraction,
+//     Multiplication,
+//     Division,
+//     Remainder,
+//     Power,
+//     EndStatement,
+// }
+
+pub trait ParsingSupport: Sized {
+    fn to_digit(&mut self, rhs: Self);
+    fn to_default(&mut self);
 }
 
 #[derive(Debug, Clone)]
 pub struct Scanner<'a> {
     chars: Chars<'a>,
-    result: Vec<TokenKind>,
+    result: Vec<NodeExpr>,
     pos_line: usize,
     pos_col: usize,
 }
@@ -32,99 +38,53 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn inc_line(&mut self) {
+    fn add_line(&mut self) {
         self.pos_line += 1;
     }
 
-    fn inc_col(&mut self) {
+    fn add_column(&mut self) {
         self.pos_col += 1;
     }
 
-    fn reset_col(&mut self) {
+    fn reset_column(&mut self) {
         self.pos_col = 1;
     }
 
-    fn push_token(&mut self, tok: TokenKind) {
-        self.result.push(tok);
+    fn add_node(&mut self, node: NodeExpr) {
+        self.result.push(node);
     }
 
-    #[allow(unused_assignments)]
     pub fn scan(&mut self) -> Result<&mut Self, SyntaxError> {
-        use TokenKind::*;
+        let mut if_digit: i64 = 0;
 
-        while let Some(chr) = self.next() {
-            let mut is_number = 0_u128;
-
-            match chr {
+        while let Some(char) = self.next() {
+            match char {
                 '0'..='9' => {
-                    is_number = chr.to_digit(10).unwrap_or(0) as u128;
+                    if_digit.to_digit(char.to_digit(10).unwrap_or_default() as i64);
 
-                    'inner: while let Some(inside) = self.clone().next() {
-                        self.inc_col();
+                    'inner_loop: while let Some(inner) = self.clone().next() {
+                        self.add_column();
 
-                        if let Some(digit) = inside.to_digit(10) {
-                            is_number = is_number * 10 + digit as u128;
+                        if let Some(digit) = inner.to_digit(10) {
+                            if_digit.to_digit(digit as i64);
                             self.next();
                         } else {
-                            break 'inner;
+                            break 'inner_loop;
                         }
                     }
 
-                    self.result.push(Number(is_number));
-                    is_number = 0;
+                    self.add_node(NodeExpr::IntExpr(if_digit));
+                    if_digit.to_default();
                 }
 
                 '+' => {
-                    self.push_token(Add);
-                    self.inc_col();
-                }
+                    self.add_node(NodeExpr::BinaryExpr {
+                        binary_op: BinaryOperator::Addition,
+                        left_node: Box::new(self.result.last().unwrap().clone()),
+                        right_node: continue,
+                    });
 
-                '-' => {
-                    self.push_token(Sub);
-                    self.inc_col();
-                }
-
-                '*' => {
-                    self.push_token(Mul);
-                    self.inc_col();
-                }
-
-                '/' => {
-                    self.push_token(Div);
-                    self.inc_col();
-                }
-
-                '%' => {
-                    self.push_token(Rem);
-                    self.inc_col();
-                }
-
-                '^' => {
-                    self.push_token(Pow);
-                    self.inc_col();
-                }
-
-                ';' => {
-                    self.push_token(EOL);
-                    self.inc_col();
-                }
-
-                '\n' => {
-                    self.inc_line();
-                    self.reset_col();
-                }
-
-                ' ' | '\t' => {
-                    self.inc_col();
-                }
-
-                _ => {
-                    let error = SyntaxError::new(
-                        format!("unexpected symbol \'{chr}\'"),
-                        self.pos_line,
-                        self.pos_col,
-                    );
-                    return Err(error);
+                    self.add_column();
                 }
             }
         }
@@ -132,14 +92,101 @@ impl<'a> Scanner<'a> {
         Ok(self)
     }
 
-    pub fn scan_owned(&mut self) -> Result<Self, SyntaxError> {
-        let result = Self::clone(self.scan()?);
-        Ok(result)
-    }
+    // fn add_token(&mut self, tok: TokenKind) {
+    //     self.result.push(tok);
+    // }
 
-    pub fn parser_dump(&self) -> String {
-        format!("{:#?}", &self.result)
-    }
+    // #[allow(unused_assignments)]
+    // pub fn scan_vector(&mut self) -> Result<&mut Self, SyntaxError> {
+    //     use TokenKind::*;
+    //     let mut is_number = 0_i64;
+
+    //     while let Some(chr) = self.next() {
+    //         match chr {
+    //             '0'..='9' => {
+    //                 is_number = chr.to_digit(10).unwrap_or(0) as i64;
+
+    //                 'inner: while let Some(inside) = self.clone().next() {
+    //                     self.add_column();
+
+    //                     if let Some(digit) = inside.to_digit(10) {
+    //                         is_number = is_number * 10 + digit as i64;
+    //                         self.next();
+    //                     } else {
+    //                         break 'inner;
+    //                     }
+    //                 }
+
+    //                 self.result.push(Number(is_number));
+    //                 is_number = 0;
+    //             }
+
+    //             '+' => {
+    //                 self.add_token(Addition);
+    //                 self.add_column();
+    //             }
+
+    //             '-' => {
+    //                 self.add_token(Substraction);
+    //                 self.add_column();
+    //             }
+
+    //             '*' => {
+    //                 self.add_token(Multiplication);
+    //                 self.add_column();
+    //             }
+
+    //             '/' => {
+    //                 self.add_token(Division);
+    //                 self.add_column();
+    //             }
+
+    //             '%' => {
+    //                 self.add_token(Remainder);
+    //                 self.add_column();
+    //             }
+
+    //             '^' => {
+    //                 self.add_token(Power);
+    //                 self.add_column();
+    //             }
+
+    //             ';' => {
+    //                 self.add_token(EndStatement);
+    //                 self.add_column();
+    //             }
+
+    //             '\n' => {
+    //                 self.add_line();
+    //                 self.reset_column();
+    //             }
+
+    //             ' ' | '\t' => {
+    //                 self.add_column();
+    //             }
+
+    //             _ => {
+    //                 let error = SyntaxError::new(
+    //                     format!("unexpected symbol \'{chr}\'"),
+    //                     self.pos_line,
+    //                     self.pos_col,
+    //                 );
+    //                 return Err(error);
+    //             }
+    //         }
+    //     }
+
+    //     Ok(self)
+    // }
+
+    // pub fn scan_vector_move(&mut self) -> Result<Self, SyntaxError> {
+    //     let result = Self::clone(self.scan_vector()?);
+    //     Ok(result)
+    // }
+
+    // pub fn parser_dump(&self) -> String {
+    //     format!("{:#?}", &self.result)
+    // }
 }
 
 impl<'a> Deref for Scanner<'a> {
@@ -153,5 +200,17 @@ impl<'a> Deref for Scanner<'a> {
 impl<'a> DerefMut for Scanner<'a> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.chars
+    }
+}
+
+impl ParsingSupport for i64 {
+    fn to_digit(&mut self, rhs: Self) {
+        const RADIX: u8 = 10;
+
+        *self = *self * RADIX as Self + rhs;
+    }
+
+    fn to_default(&mut self) {
+        *self = Self::default();
     }
 }
